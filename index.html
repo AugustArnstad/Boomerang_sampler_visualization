@@ -96,7 +96,7 @@ var a=arc(x,v,250);segs.push({p:a.p.map(p2s),t:'n'});x=a.x;v=a.v;t+=250*dt;
 var gd=[bs[0]-x[0],bs[1]-x[1]],gn=Math.sqrt(gd[0]*gd[0]+gd[1]*gd[1]),gU=[gd[0]/gn,gd[1]/gn],vI=[v[0],v[1]],ip=v[0]*gU[0]+v[1]*gU[1];
 v=[v[0]-2*ip*gU[0],v[1]-2*ip*gU[1]];
 evts.push({ty:'bounce',pos:p2s(x),v:[v[0],v[1]],vI:vI,gU:gU,ip:ip,fr:[false,false],fv:[0,0],t:+t.toFixed(2),sk:true,
-ck:{bounce:0.85,refresh:1.40,freeze:2.10,thaw:1/0,w:'bounce'},
+ck:{bounce:0.85,refresh:2.50,freeze:2.10,thaw:1/0,w:'bounce'},
 bt:'Accepted bounce',bd:'Poisson thinning accepted. Velocity reflects off \u2207U(\u03b2).',
 bm:'\u27e8v, \u2207U\u27e9 = '+ip.toFixed(2)+' > 0\nv_out = v_in \u2212 2\u27e8v,\u2207U\u27e9/\u2016\u2207U\u2016\u00b2 \u00b7 \u03a3\u2207U'});
 pushS({x:x,v:v,fr:[false,false],fv:[0,0],t:+t.toFixed(2)});
@@ -104,14 +104,14 @@ pushS({x:x,v:v,fr:[false,false],fv:[0,0],t:+t.toFixed(2)});
 // 2: REJECT (120 steps)
 a=arc(x,v,120);segs.push({p:a.p.map(p2s),t:'n'});x=a.x;v=a.v;t+=120*dt;
 evts.push({ty:'reject',pos:p2s(x),v:[v[0],v[1]],vI:null,gU:null,ip:0,fr:[false,false],fv:[0,0],t:+t.toFixed(2),sk:false,
-ck:{bounce:0.62,refresh:1.95,freeze:3.40,thaw:1/0,w:'reject'},bt:'Rejected proposal',bd:'Thinning failed. Same orbit, no skeleton point.',bm:'u > \u03bb(\u03c4*) / \u03bb\u0304\nNo state change'});
+ck:{bounce:0.62,refresh:1.65,freeze:3.40,thaw:1/0,w:'reject'},bt:'Rejected proposal',bd:'Thinning failed. Same orbit, no skeleton point.',bm:'u > \u03bb(\u03c4*) / \u03bb\u0304\nNo state change'});
 pushS({x:x,v:v,fr:[false,false],fv:[0,0],t:+t.toFixed(2)});
 
 // 3: REFRESH (160 steps)
 a=arc(x,v,160);segs.push({p:a.p.map(p2s),t:'n'});x=a.x;v=a.v;t+=160*dt;
 var vyN=Math.sqrt(4-Math.pow(x[1]-2,2));v=[0.5,-(vyN+0.3)];
 evts.push({ty:'refresh',pos:p2s(x),v:[v[0],v[1]],vI:null,gU:null,ip:0,fr:[false,false],fv:[0,0],t:+t.toFixed(2),sk:true,
-ck:{bounce:1.30,refresh:0.72,freeze:4.10,thaw:1/0,w:'refresh'},bt:'Velocity refresh',bd:'\u03c4_refresh expired first. Fresh velocity from reference measure.',bm:'v ~ \u03a3\u00b9\u2044\u00b2 N(0, I)\nNew ellipse'});
+ck:{bounce:1.30,refresh:1.03,freeze:4.10,thaw:1/0,w:'refresh'},bt:'Velocity refresh',bd:'\u03c4_refresh expired first. Fresh velocity from reference measure.',bm:'v ~ \u03a3\u00b9\u2044\u00b2 N(0, I)\nNew ellipse'});
 pushS({x:x,v:v,fr:[false,false],fv:[0,0],t:+t.toFixed(2)});
 
 // 4: FREEZE (cross y=0)
@@ -121,7 +121,7 @@ var fP=a.p.slice(0,fI+1);fP[fP.length-1][1]=0;segs.push({p:fP.map(p2s),t:'n'});
 var ab=arc(x,v,fI);var vF=ab.v;x=[fP[fP.length-1][0],0];t+=fI*dt;
 var sv2=vF[1];fv=[0,sv2];fr=[false,true];v=[vF[0],0];
 evts.push({ty:'freeze',pos:p2s(x),v:[v[0],0],vI:null,gU:null,ip:0,fr:[false,true],fv:[0,sv2],t:+t.toFixed(2),sk:true,
-ck:{bounce:1.80,refresh:2.10,freeze:0.95,thaw:1/0,w:'freeze'},bt:'Freeze \u03b2\u2082',bd:'Trajectory crossed \u03b2\u2082 = 0. Store velocity, collapse to 1D.',
+ck:{bounce:1.80,refresh:2.80,freeze:0.95,thaw:1/0,w:'freeze'},bt:'Freeze \u03b2\u2082',bd:'Trajectory crossed \u03b2\u2082 = 0. Store velocity, collapse to 1D.',
 bm:'\u1e7d\u2082 = '+sv2.toFixed(2)+' (stored)\n\u03b2\u2082 = 0, v\u2082 = 0\n1D on \u03b2\u2081 axis'});
 pushS({x:x,v:[v[0],0],fr:[false,true],fv:[0,sv2],t:+t.toFixed(2)});
 
@@ -129,21 +129,21 @@ pushS({x:x,v:[v[0],0],fr:[false,true],fv:[0,sv2],t:+t.toFixed(2)});
 a=arc(x,[v[0],0],130,F);segs.push({p:a.p.map(p2s),t:'f'});x=a.x;v=a.v;t+=130*dt;
 var gU5=[0.8*(bs[0]-x[0]),0],vI5=[v[0],0],ip5=v[0]*gU5[0];v=[-v[0]*0.85,0];
 evts.push({ty:'bounce',pos:p2s(x),v:[v[0],0],vI:vI5,gU:gU5,ip:ip5,fr:[false,true],fv:[0,sv2],t:+t.toFixed(2),sk:true,
-ck:{bounce:0.55,refresh:1.80,freeze:1/0,thaw:1.20,w:'bounce'},bt:'Bounce (1D, frozen)',bd:'Reflection on active subspace. \u03b2\u2082 stays frozen.',
+ck:{bounce:0.55,refresh:1.85,freeze:1/0,thaw:1.20,w:'bounce'},bt:'Bounce (1D, frozen)',bd:'Reflection on active subspace. \u03b2\u2082 stays frozen.',
 bm:'\u27e8v, \u2207U\u27e9 = '+ip5.toFixed(2)+' > 0\nR restricted to unfrozen coords'});
 pushS({x:x,v:[v[0],0],fr:[false,true],fv:[0,sv2],t:+t.toFixed(2)});
 
 // 6: 1D REJECT (90 steps)
 a=arc(x,[v[0],0],90,F);segs.push({p:a.p.map(p2s),t:'f'});x=a.x;v=a.v;t+=90*dt;
 evts.push({ty:'reject',pos:p2s(x),v:[v[0],0],vI:null,gU:null,ip:0,fr:[false,true],fv:[0,sv2],t:+t.toFixed(2),sk:false,
-ck:{bounce:0.70,refresh:2.30,freeze:1/0,thaw:0.85,w:'reject'},bt:'Rejected (1D, frozen)',bd:'Thinning failed. \u03c4_thaw close.',bm:'u > p\nStill frozen'});
+ck:{bounce:0.45,refresh:1.30,freeze:1/0,thaw:0.65,w:'reject'},bt:'Rejected (1D, frozen)',bd:'Thinning failed. \u03c4_thaw close.',bm:'u > p\nStill frozen'});
 pushS({x:x,v:[v[0],0],fr:[false,true],fv:[0,sv2],t:+t.toFixed(2)});
 
 // 7: THAW (110 steps, restore stored v2 < 0)
 a=arc(x,[v[0],0],110,F);segs.push({p:a.p.map(p2s),t:'f'});x=a.x;v=a.v;t+=110*dt;
 var vThaw=[v[0],sv2];fr=[false,false];fv=[0,0];
 evts.push({ty:'thaw',pos:p2s(x),v:vThaw,vI:null,gU:null,ip:0,fr:[false,false],fv:[0,0],t:+t.toFixed(2),sk:true,
-ck:{bounce:1.50,refresh:1.80,freeze:1/0,thaw:0.65,w:'thaw'},bt:'Thaw \u03b2\u2082',
+ck:{bounce:1.50,refresh:0.85,freeze:1/0,thaw:0.20,w:'thaw'},bt:'Thaw \u03b2\u2082',
 bd:'Restore \u1e7d\u2082 < 0. Trajectory dips below \u03b2\u2082 = 0, triggering a re-freeze when it returns.',
 bm:'v\u2082 \u2190 \u1e7d\u2082 = '+sv2.toFixed(2)+'\nTrajectory enters \u03b2\u2082 < 0 briefly'});
 pushS({x:x,v:vThaw,fr:[false,false],fv:[0,0],t:+t.toFixed(2)});
@@ -155,7 +155,7 @@ var fP2=a.p.slice(0,fI2+1);fP2[fP2.length-1][1]=0;segs.push({p:fP2.map(p2s),t:'n
 var ab2=arc(x,vThaw,fI2);var vF2=ab2.v;x=[fP2[fP2.length-1][0],0];t+=fI2*dt;
 var sv2b=vF2[1];
 evts.push({ty:'freeze',pos:p2s(x),v:[vF2[0],0],vI:null,gU:null,ip:0,fr:[false,true],fv:[0,sv2b],t:+t.toFixed(2),sk:true,
-ck:{bounce:2.10,refresh:1.90,freeze:0.40,thaw:1/0,w:'freeze'},bt:'Freeze \u03b2\u2082 (2nd)',
+ck:{bounce:2.10,refresh:0.65,freeze:0.40,thaw:1/0,w:'freeze'},bt:'Freeze \u03b2\u2082 (2nd)',
 bd:'Trajectory returns through \u03b2\u2082 = 0. Re-freeze with \u1e7d\u2082 > 0 this time.',
 bm:'\u1e7d\u2082 = '+sv2b.toFixed(2)+' (stored, positive)\n1D again'});
 pushS({x:x,v:[vF2[0],0],fr:[false,true],fv:[0,sv2b],t:+t.toFixed(2)});
@@ -164,7 +164,7 @@ pushS({x:x,v:[vF2[0],0],fr:[false,true],fv:[0,sv2b],t:+t.toFixed(2)});
 a=arc(x,[vF2[0],0],40,F);segs.push({p:a.p.map(p2s),t:'f'});x=a.x;v=a.v;t+=40*dt;
 var vThaw2=[v[0],sv2b];
 evts.push({ty:'thaw',pos:p2s(x),v:vThaw2,vI:null,gU:null,ip:0,fr:[false,false],fv:[0,0],t:+t.toFixed(2),sk:true,
-ck:{bounce:1.80,refresh:2.40,freeze:1/0,thaw:0.30,w:'thaw'},bt:'Thaw \u03b2\u2082 (2nd)',
+ck:{bounce:1.80,refresh:0.25,freeze:1/0,thaw:0.18,w:'thaw'},bt:'Thaw \u03b2\u2082 (2nd)',
 bd:'Restore \u1e7d\u2082 > 0. Trajectory now heads upward \u2014 no more zero crossings.',
 bm:'v\u2082 \u2190 \u1e7d\u2082 = '+sv2b.toFixed(2)+' > 0\n\u03b2\u2082 = 0, heading up'});
 pushS({x:x,v:vThaw2,fr:[false,false],fv:[0,0],t:+t.toFixed(2)});
@@ -175,7 +175,7 @@ var gd10=[bs[0]-x[0],bs[1]-x[1]],gn10=Math.sqrt(gd10[0]*gd10[0]+gd10[1]*gd10[1])
 var gU10=[gd10[0]/gn10,gd10[1]/gn10],vI10=[v[0],v[1]],ip10=v[0]*gU10[0]+v[1]*gU10[1];
 v=[v[0]-2*ip10*gU10[0],v[1]-2*ip10*gU10[1]];
 evts.push({ty:'bounce',pos:p2s(x),v:[v[0],v[1]],vI:vI10,gU:gU10,ip:ip10,fr:[false,false],fv:[0,0],t:+t.toFixed(2),sk:true,
-ck:{bounce:0.75,refresh:1.50,freeze:3.20,thaw:1/0,w:'bounce'},bt:'Bounce (full 2D)',bd:'Full 2D reflection. All coords active.',
+ck:{bounce:0.05,refresh:0.07,freeze:3.20,thaw:1/0,w:'bounce'},bt:'Bounce (full 2D)',bd:'Full 2D reflection. All coords active.',
 bm:'\u27e8v, \u2207U\u27e9 = '+ip10.toFixed(2)+' > 0\nFull reflection'});
 pushS({x:x,v:v,fr:[false,false],fv:[0,0],t:+t.toFixed(2)});
 
