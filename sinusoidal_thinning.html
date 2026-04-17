@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinusoidal Piecewise Linear Thinning — Interactive</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --bg-card: #11141a;
+    --bg-panel: #161a22;
+    --border: #1f2530;
+    --border-hi: #2a3040;
+    --fg: #ddd8cc;
+    --fg-dim: #918a7c;
+    --fg-muted: #5a5549;
+    --accent-blue: #5b9bd5;
+    --accent-gold: #d4a853;
+    --accent-red: #c95d63;
+    --accent-green: #6abf8a;
+    --accent-purple: #9b8ec4;
+    --accent-orange: #d4883a;
+    --rate-true: #c95d63;
+    --rate-bound: #5b9bd5;
+    --rate-fit: #9b8ec4;
+    --mono: 'JetBrains Mono', monospace;
+    --serif: 'Crimson Pro', Georgia, serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--serif); line-height: 1.6; min-height: 100vh; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+  header { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  header h1 { font-weight: 300; font-size: 2.2rem; letter-spacing: -0.025em; }
+  header h1 span { color: var(--accent-gold); }
+  header .sub { color: var(--fg-dim); font-size: 1.05rem; font-style: italic; margin-top: 0.3rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; padding: 0.8rem 0 1.5rem; font-size: 0.88rem; color: var(--fg-dim); }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .lsw { width: 22px; height: 3px; border-radius: 1px; }
+  .lsw.dash { background: repeating-linear-gradient(90deg, var(--rate-fit) 0 5px, transparent 5px 9px); }
+  .tab-row { display: flex; gap: 0; margin-bottom: 0; }
+  .tab-btn { font-family: var(--mono); font-size: 0.78rem; padding: 0.6rem 1.4rem; border: 1px solid var(--border); background: var(--bg); color: var(--fg-dim); cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; border-bottom: none; border-radius: 6px 6px 0 0; }
+  .tab-btn:hover { background: var(--bg-panel); color: var(--fg); }
+  .tab-btn.active { background: var(--bg-card); color: var(--accent-gold); border-color: var(--border-hi); }
+  .viz-main { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0 8px 8px 8px; overflow: hidden; margin-bottom: 1.5rem; }
+  .viz-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+  .step-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px; font-family: var(--mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; margin-right: 0.5rem; }
+  .step-badge.init { background: var(--accent-purple); color: var(--bg); }
+  .step-badge.fit { background: var(--accent-orange); color: var(--bg); }
+  .step-badge.reject { background: var(--accent-red); color: var(--bg); }
+  .step-badge.accept { background: var(--accent-green); color: var(--bg); }
+  .step-label { font-size: 1.05rem; color: var(--fg); }
+  .btn-row { display: flex; gap: 0.5rem; }
+  .btn { font-family: var(--mono); font-size: 0.78rem; padding: 0.4rem 1rem; border: 1px solid var(--border-hi); background: var(--bg); color: var(--fg-dim); border-radius: 4px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; user-select: none; }
+  .btn:hover { background: var(--bg-panel); color: var(--fg); border-color: var(--fg-muted); }
+  .btn.primary { background: var(--accent-gold); color: var(--bg); border-color: var(--accent-gold); font-weight: 500; }
+  .btn.primary:hover { background: #e0b45e; }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+  .btn:disabled:hover { background: var(--bg); color: var(--fg-dim); border-color: var(--border-hi); }
+  .btn.primary:disabled:hover { background: var(--accent-gold); color: var(--bg); }
+  .svg-container { padding: 1rem; min-height: 380px; }
+  svg text { font-family: 'Crimson Pro', Georgia, serif; }
+  svg text.mono { font-family: 'JetBrains Mono', monospace; }
+  .explanation-panel { border-top: 1px solid var(--border); padding: 1.2rem 1.5rem; background: var(--bg-panel); min-height: 100px; }
+  .explanation-panel .math-line { margin-bottom: 0.6rem; font-size: 0.95rem; color: var(--fg-dim); line-height: 1.8; }
+  .explanation-panel .math-line:last-child { margin-bottom: 0; }
+  .explanation-panel .narration { color: var(--fg); font-size: 1rem; margin-bottom: 0.7rem; line-height: 1.7; }
+  .explanation-panel .highlight { color: var(--accent-gold); }
+  .explanation-panel .reject-text { color: var(--accent-red); font-weight: 600; }
+  .explanation-panel .accept-text { color: var(--accent-green); font-weight: 600; }
+  .katex { font-size: 1em; }
+  .explanation-panel .katex { font-size: 1.05em; }
+  .kb-hint { text-align: center; color: var(--fg-muted); font-size: 0.8rem; margin-top: 0.8rem; font-family: var(--mono); }
+  .kb-hint kbd { display: inline-block; background: var(--bg-panel); border: 1px solid var(--border-hi); border-radius: 3px; padding: 0.1rem 0.4rem; font-size: 0.75rem; margin: 0 0.15rem; }
+  .svg-fade-in { animation: svgFadeIn 0.4s ease-out forwards; }
+  @keyframes svgFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .progress-row { display: flex; justify-content: center; gap: 0.4rem; padding: 0.8rem 0 0; }
+  .pdot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-hi); transition: all 0.25s; }
+  .pdot.active { background: var(--accent-gold); transform: scale(1.3); }
+  .pdot.done { background: var(--fg-muted); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Sinusoidal Piecewise Linear <span>Thinning</span></h1>
+  <p class="sub">Exploiting the Boomerang's trigonometric rate structure for tighter envelopes.</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="lsw" style="background:var(--rate-true);"></div> True rate $\lambda(t)$</div>
+  <div class="legend-item"><div class="lsw" style="background:var(--rate-fit);"></div> Fitted sinusoid $\hat{r}(t)$</div>
+  <div class="legend-item"><div class="lsw" style="background:var(--rate-bound);"></div> PL envelope $h(t)$</div>
+  <div class="legend-item"><div class="lsw" style="background:var(--accent-gold);"></div> Proposal</div>
+  <div class="legend-item"><div class="lsw" style="background:var(--accent-green);"></div> Accepted</div>
+  <div class="legend-item"><div class="lsw" style="background:var(--accent-red);"></div> Rejected</div>
+</div>
+
+<div class="tab-row">
+  <button class="tab-btn active" id="tabGauss" onclick="switchTab('gauss')">Gaussian target (1st harmonic)</button>
+  <button class="tab-btn" id="tabNonGauss" onclick="switchTab('nongauss')">Non-Gaussian (2nd harmonic)</button>
+</div>
+
+<div class="viz-main">
+  <div class="viz-toolbar">
+    <div>
+      <span class="step-badge init" id="badge">INIT</span>
+      <span class="step-label" id="stepLabel">Initialization</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="prevBtn" disabled>&larr; Back</button>
+      <button class="btn primary" id="nextBtn">Next &rarr;</button>
+    </div>
+  </div>
+  <div class="svg-container" id="svgContainer"></div>
+  <div class="explanation-panel" id="explanationPanel"></div>
+</div>
+
+<div class="progress-row" id="progressRow"></div>
+<div class="kb-hint"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> or click to navigate</div>
+
+</div>
+
+<script>
+const PI = Math.PI;
+const ALPHA = 1.2;
+const fmt = (v, d=2) => v.toFixed(d);
+const fmt3 = v => v.toFixed(3);
+
+// Coordinate mapping: t ∈ [0, 4] → x, rate ∈ [0, 6] → y
+function tx(t) { return 80 + t * 200; }
+function ry(r) { return 300 - r * 46; }
+
+// ===========================
+// SCENARIO DEFINITIONS
+// ===========================
+const scenarios = {
+  gauss: {
+    label: 'Gaussian target',
+    // Exact sinusoidal rate: r(t) = 2.0 + 2.5 sin(2t) + 1.0 cos(2t)
+    A_true: 2.0, B1_true: 2.5, C1_true: 1.0, B2_true: 0, C2_true: 0,
+    trueRate(t) {
+      return Math.max(0, this.A_true + this.B1_true*Math.sin(2*t) + this.C1_true*Math.cos(2*t));
+    },
+    useSecondHarmonic: false,
+  },
+  nongauss: {
+    label: 'Non-Gaussian target',
+    // Sinusoidal + second harmonic: adds 1.2 sin(4t) + 0.4 cos(4t)
+    A_true: 2.0, B1_true: 2.5, C1_true: 1.0, B2_true: 1.2, C2_true: 0.4,
+    trueRate(t) {
+      return Math.max(0,
+        this.A_true + this.B1_true*Math.sin(2*t) + this.C1_true*Math.cos(2*t)
+        + this.B2_true*Math.sin(4*t) + this.C2_true*Math.cos(4*t));
+    },
+    useSecondHarmonic: true,
+  }
+};
+
+let activeTab = 'gauss';
+let currentStep = 0;
+
+function switchTab(tab) {
+  activeTab = tab;
+  currentStep = 0;
+  document.getElementById('tabGauss').className = 'tab-btn' + (tab === 'gauss' ? ' active' : '');
+  document.getElementById('tabNonGauss').className = 'tab-btn' + (tab === 'nongauss' ? ' active' : '');
+  rebuildProgressDots();
+  render();
+}
+
+// ===========================
+// COMPUTE SCENARIO DATA
+// ===========================
+function computeScenario(sc) {
+  const rate = t => sc.trueRate(t);
+
+  // Phase 1: 3 evaluations
+  const r0 = rate(0), r1 = rate(PI/4), r2 = rate(PI/2);
+  const A = 0.5*(r0 + r2), C1 = 0.5*(r0 - r2), B1 = r1 - A;
+
+  let B2 = 0, C2 = 0;
+  let fitEvals = 3;
+  let r_t4 = null, r_t5 = null;
+
+  if (sc.useSecondHarmonic) {
+    const t4 = PI/8, t5 = 3*PI/16;
+    r_t4 = rate(t4); r_t5 = rate(t5);
+    fitEvals = 5;
+    const pred4 = A + B1*Math.sin(2*t4) + C1*Math.cos(2*t4);
+    const pred5 = A + B1*Math.sin(2*t5) + C1*Math.cos(2*t5);
+    const d4 = r_t4 - pred4, d5 = r_t5 - pred5;
+    const s4 = Math.sin(4*t4), c4 = Math.cos(4*t4);
+    const s5 = Math.sin(4*t5), c5 = Math.cos(4*t5);
+    const det = s4*c5 - s5*c4;
+    B2 = (d4*c5 - d5*c4) / det;
+    C2 = (s4*d5 - s5*d4) / det;
+  }
+
+  const fittedRate = t => A + B1*Math.sin(2*t) + C1*Math.cos(2*t) + B2*Math.sin(4*t) + C2*Math.cos(4*t);
+
+  // Phase 2: Build envelope knots over [0, pi]
+  const nSeg = 8;
+  let rawTimes = [];
+  for (let i = 0; i <= nSeg; i++) rawTimes.push(i * PI / nSeg);
+  let rawVals = rawTimes.map(t => ALPHA * Math.max(fittedRate(t), 0));
+
+  // Concavity fix
+  let knots = [{t: rawTimes[0], v: rawVals[0]}];
+  for (let i = 0; i < rawTimes.length-1; i++) {
+    const tm = 0.5*(rawTimes[i]+rawTimes[i+1]);
+    const vChord = 0.5*(rawVals[i]+rawVals[i+1]);
+    const vFit = ALPHA*Math.max(fittedRate(tm), 0);
+    if (vFit > vChord) knots.push({t: tm, v: vFit});
+    knots.push({t: rawTimes[i+1], v: rawVals[i+1]});
+  }
+
+  // Build segments
+  let segments = [];
+  for (let i = 0; i < knots.length-1; i++) {
+    const dt = knots[i+1].t - knots[i].t;
+    if (dt < 1e-14) continue;
+    segments.push({
+      t0: knots[i].t, t1: knots[i+1].t,
+      v0: knots[i].v, v1: knots[i+1].v,
+      a: (knots[i+1].v - knots[i].v) / dt, b: knots[i].v
+    });
+  }
+
+  // Simulate thinning: find a proposal and accept/reject
+  // Use predetermined random numbers for reproducibility
+  const U_vals = activeTab === 'gauss'
+    ? [0.35, 0.70, 0.50]
+    : [0.40, 0.75, 0.45];
+  const U2_vals = activeTab === 'gauss'
+    ? [0.95, 0.25]
+    : [0.90, 0.30];
+
+  let proposals = [];
+  let segIdx = 0;
+  let tPrev = 0, lamPrev = segments[0].b;
+  let curA = segments[0].a, curB = segments[0].b;
+
+  for (let iter = 0; iter < 2; iter++) {
+    const U1 = U_vals[iter];
+    const xi = -Math.log(1 - U1);
+    let s;
+    if (Math.abs(curA) < 1e-14) {
+      s = xi / curB;
+    } else {
+      const disc = curB*curB + 2*curA*xi;
+      s = (-curB + Math.sqrt(Math.max(disc, 0))) / curA;
+    }
+    const tProp = tPrev + s;
+    const lamTrue = rate(tProp);
+    const hProp = curB + curA * s;
+    const ratio = hProp > 1e-14 ? lamTrue / hProp : 0;
+    const U2 = U2_vals[iter];
+    const accepted = U2 < ratio;
+
+    proposals.push({
+      tPrev, curA, curB, U1, U2, xi, s, tProp,
+      lamTrue, hProp, ratio, accepted,
+      disc: curB*curB + 2*curA*xi
+    });
+
+    if (accepted) break;
+
+    // Update: standard PLI from rejection point
+    const lamKnot = ALPHA * lamTrue;
+    curA = (lamKnot - lamPrev) / (tProp - tPrev);
+    curB = lamKnot;
+    lamPrev = lamKnot;
+    tPrev = tProp;
+  }
+
+  return {
+    rate, fittedRate, A, B1, C1, B2, C2,
+    r0, r1, r2, r_t4, r_t5,
+    fitEvals, knots, segments, proposals,
+    useSecondHarmonic: sc.useSecondHarmonic
+  };
+}
+
+// ===========================
+// STEP STRUCTURE
+// ===========================
+function getTotalSteps(data) {
+  // Step 0: show true rate
+  // Step 1: show 3 fit evaluations
+  // Step 2: (if 2nd harmonic) show 2 more evaluations
+  // Step 3: show fitted sinusoid
+  // Step 4: show PL envelope
+  // Then per proposal: propose, evaluate, accept/reject (3 steps each)
+  let s = 5; // base steps (0-4), but without 2nd harmonic step 2 is skipped
+  if (!data.useSecondHarmonic) s = 4;
+  s += data.proposals.length * 3;
+  return s;
+}
+
+function getStepInfo(step, data) {
+  const has2nd = data.useSecondHarmonic;
+  if (step === 0) return {phase: 'true', badge: ['TRUE RATE', 'init']};
+  if (step === 1) return {phase: 'fit3', badge: ['FIT', 'fit']};
+  if (has2nd && step === 2) return {phase: 'fit5', badge: ['FIT +2', 'fit']};
+
+  const envStep = has2nd ? 3 : 2;
+  const plStep = envStep + 1;
+  if (step === envStep) return {phase: 'sinusoid', badge: ['SINUSOID', 'fit']};
+  if (step === plStep) return {phase: 'envelope', badge: ['ENVELOPE', 'init']};
+
+  const propBase = plStep + 1;
+  const propIdx = Math.floor((step - propBase) / 3);
+  const subStep = (step - propBase) % 3;
+  const prop = data.proposals[propIdx];
+  const iterLabel = `ITER ${propIdx+1}`;
+  if (subStep === 0) return {phase: 'propose', propIdx, badge: [iterLabel, 'init']};
+  if (subStep === 1) return {phase: 'evaluate', propIdx, badge: [iterLabel, prop.accepted ? 'accept' : 'reject']};
+  return {phase: 'decision', propIdx, badge: [iterLabel, prop.accepted ? 'accept' : 'reject']};
+}
+
+// ===========================
+// SVG BUILDERS
+// ===========================
+function axesSVG() {
+  let s = '';
+  s += `<line x1="80" y1="300" x2="900" y2="300" stroke="#2a2a2a" stroke-width="1"/>`;
+  s += `<line x1="80" y1="300" x2="80" y2="20" stroke="#2a2a2a" stroke-width="1"/>`;
+  for (let i = 0; i <= 4; i++) {
+    let x = tx(i);
+    s += `<line x1="${x}" y1="300" x2="${x}" y2="305" stroke="#444" stroke-width="1"/>`;
+    if (i === 0) s += `<text x="${x}" y="318" fill="#5a5549" font-size="11" text-anchor="middle" class="mono">0</text>`;
+    else if (i === 1) s += `<text x="${x}" y="318" fill="#5a5549" font-size="11" text-anchor="middle" class="mono">π/4</text>`;
+    else if (i === 2) s += `<text x="${x}" y="318" fill="#5a5549" font-size="11" text-anchor="middle" class="mono">π/2</text>`;
+    else if (i === 3) s += `<text x="${x}" y="318" fill="#5a5549" font-size="11" text-anchor="middle" class="mono">3π/4</text>`;
+    else s += `<text x="${x}" y="318" fill="#5a5549" font-size="11" text-anchor="middle" class="mono">π</text>`;
+  }
+  for (let r = 1; r <= 6; r++) {
+    let y = ry(r);
+    s += `<line x1="76" y1="${y}" x2="80" y2="${y}" stroke="#333" stroke-width="1"/>`;
+    s += `<text x="72" y="${(y+4)}" fill="#5a5549" font-size="10" text-anchor="end" class="mono">${r}</text>`;
+  }
+  s += `<text x="895" y="318" fill="#5a5549" font-size="13" font-style="italic" text-anchor="end">t</text>`;
+  s += `<text x="66" y="28" fill="#5a5549" font-size="12" font-style="italic" text-anchor="end">rate</text>`;
+  return s;
+}
+
+function curvePath(fn, tMax=PI, nPts=200) {
+  let pts = [];
+  for (let i = 0; i <= nPts; i++) {
+    let t = i * tMax / nPts;
+    pts.push([tx(t/(PI/4)), ry(fn(t))]);
+  }
+  return 'M' + pts.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+}
+
+function trueCurveSVG(fn) {
+  return `<path d="${curvePath(fn)}" fill="none" stroke="var(--rate-true)" stroke-width="2.2" opacity="0.85" stroke-linejoin="round"/>` +
+    `<text x="${tx(PI/(PI/4)*0.92)}" y="${ry(fn(PI*0.92))-12}" fill="var(--rate-true)" font-size="13" font-style="italic">λ(t)</text>`;
+}
+
+function fittedCurveSVG(fn, opacity=0.7) {
+  return `<path d="${curvePath(fn)}" fill="none" stroke="var(--rate-fit)" stroke-width="1.8" opacity="${opacity}" stroke-dasharray="6,4" stroke-linejoin="round"/>`;
+}
+
+function envelopeSVG(knots, opacity=0.8) {
+  let s = '';
+  for (let i = 0; i < knots.length-1; i++) {
+    const x0 = tx(knots[i].t/(PI/4)), y0 = ry(knots[i].v);
+    const x1 = tx(knots[i+1].t/(PI/4)), y1 = ry(knots[i+1].v);
+    s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="var(--rate-bound)" stroke-width="2" opacity="${opacity}"/>`;
+  }
+  for (const k of knots) {
+    s += `<circle cx="${tx(k.t/(PI/4)).toFixed(1)}" cy="${ry(k.v).toFixed(1)}" r="3" fill="var(--rate-bound)" opacity="${opacity}"/>`;
+  }
+  return s;
+}
+
+function dotSVG(t, rate, color, r=4.5) {
+  return `<circle cx="${tx(t/(PI/4)).toFixed(1)}" cy="${ry(rate).toFixed(1)}" r="${r}" fill="${color}" stroke="var(--bg)" stroke-width="1.5"/>`;
+}
+
+function vertDashSVG(t, yTop, color="var(--accent-gold)", opacity=0.5) {
+  let x = tx(t/(PI/4));
+  return `<line x1="${x.toFixed(1)}" y1="300" x2="${x.toFixed(1)}" y2="${yTop.toFixed(1)}" stroke="${color}" stroke-width="1" stroke-dasharray="4,3" opacity="${opacity}"/>`;
+}
+
+function acceptGlowSVG(t, rate) {
+  let x = tx(t/(PI/4)).toFixed(1), y = ry(rate).toFixed(1);
+  return `<circle cx="${x}" cy="${y}" r="12" fill="none" stroke="var(--accent-green)" stroke-width="1.5" opacity="0.4" class="svg-fade-in"/>` +
+    `<circle cx="${x}" cy="${y}" r="22" fill="none" stroke="var(--accent-green)" stroke-width="0.8" opacity="0.15" class="svg-fade-in"/>` +
+    `<circle cx="${x}" cy="${y}" r="5.5" fill="var(--accent-green)" stroke="var(--accent-green)" stroke-width="2" class="svg-fade-in"/>`;
+}
+
+function rejectXSVG(t, rate) {
+  return `<text x="${tx(t/(PI/4)).toFixed(1)}" y="${ry(rate).toFixed(1)}" fill="var(--accent-red)" font-size="26" font-weight="700" text-anchor="middle" dominant-baseline="central">✕</text>`;
+}
+
+// ===========================
+// BUILD SVG
+// ===========================
+function buildSVG(step, data) {
+  const info = getStepInfo(step, data);
+  let parts = [axesSVG()];
+
+  // Always show true rate
+  parts.push(trueCurveSVG(data.rate));
+
+  // Fit evaluation dots
+  if (step >= 1) {
+    parts.push(dotSVG(0, data.r0, 'var(--accent-orange)', 5));
+    parts.push(dotSVG(PI/4, data.r1, 'var(--accent-orange)', 5));
+    parts.push(dotSVG(PI/2, data.r2, 'var(--accent-orange)', 5));
+    parts.push(`<text x="${(tx(0/(PI/4))-8).toFixed(0)}" y="${(ry(data.r0)-10).toFixed(0)}" fill="var(--accent-orange)" font-size="10" text-anchor="end" class="mono">r₀</text>`);
+    parts.push(`<text x="${(tx(1)+6).toFixed(0)}" y="${(ry(data.r1)-10).toFixed(0)}" fill="var(--accent-orange)" font-size="10" class="mono">r₁</text>`);
+    parts.push(`<text x="${(tx(2)+6).toFixed(0)}" y="${(ry(data.r2)-10).toFixed(0)}" fill="var(--accent-orange)" font-size="10" class="mono">r₂</text>`);
+  }
+
+  // 2nd harmonic dots
+  const envStep = data.useSecondHarmonic ? 3 : 2;
+  if (data.useSecondHarmonic && step >= 2) {
+    parts.push(dotSVG(PI/8, data.r_t4, 'var(--accent-orange)', 5));
+    parts.push(dotSVG(3*PI/16, data.r_t5, 'var(--accent-orange)', 5));
+    parts.push(`<text x="${(tx((PI/8)/(PI/4))+6).toFixed(0)}" y="${(ry(data.r_t4)-10).toFixed(0)}" fill="var(--accent-orange)" font-size="10" class="mono">r₃</text>`);
+    parts.push(`<text x="${(tx((3*PI/16)/(PI/4))+6).toFixed(0)}" y="${(ry(data.r_t5)-10).toFixed(0)}" fill="var(--accent-orange)" font-size="10" class="mono">r₄</text>`);
+  }
+
+  // Fitted sinusoid
+  if (step >= envStep) {
+    parts.push(fittedCurveSVG(data.fittedRate));
+  }
+
+  // PL envelope
+  if (step >= envStep + 1) {
+    parts.push(envelopeSVG(data.knots, 0.7));
+  }
+
+  // Proposals
+  const propBase = envStep + 2;
+  for (let i = 0; i < data.proposals.length; i++) {
+    const pStep = propBase + i*3;
+    if (step < pStep) break;
+    const p = data.proposals[i];
+
+    // Proposal line
+    if (step >= pStep) {
+      const topR = Math.max(p.hProp, p.lamTrue) + 0.3;
+      parts.push(vertDashSVG(p.tProp, ry(topR), 'var(--accent-gold)', 0.45));
+    }
+
+    // Rate + bound dots
+    if (step >= pStep + 1) {
+      parts.push(dotSVG(p.tProp, p.hProp, 'var(--rate-bound)', 4.5));
+      parts.push(dotSVG(p.tProp, p.lamTrue, 'var(--rate-true)', 4.5));
+      let xp = tx(p.tProp/(PI/4));
+      parts.push(`<text x="${(xp+14).toFixed(0)}" y="${(ry(p.hProp)-5).toFixed(0)}" fill="var(--rate-bound)" font-size="11" class="mono">h=${fmt(p.hProp)}</text>`);
+      parts.push(`<text x="${(xp+14).toFixed(0)}" y="${(ry(p.lamTrue)+15).toFixed(0)}" fill="var(--rate-true)" font-size="11" class="mono">λ=${fmt(p.lamTrue)}</text>`);
+    }
+
+    // Accept/reject
+    if (step >= pStep + 2) {
+      if (p.accepted) {
+        parts.push(acceptGlowSVG(p.tProp, p.lamTrue));
+      } else {
+        const mid = (p.hProp + p.lamTrue) / 2;
+        parts.push(rejectXSVG(p.tProp, mid));
+      }
+    }
+  }
+
+  return `<svg viewBox="0 0 960 340" xmlns="http://www.w3.org/2000/svg">${parts.join('\n')}</svg>`;
+}
+
+// ===========================
+// EXPLANATIONS
+// ===========================
+function buildExplanation(step, data) {
+  const info = getStepInfo(step, data);
+  const has2nd = data.useSecondHarmonic;
+
+  if (info.phase === 'true') {
+    return `<p class="narration">The Boomerang sampler's rate along its orbit has a <span class="highlight">trigonometric structure</span>.</p>
+      <p class="math-line">For a Gaussian target, the rate is exactly $\\,r(t) = A + B_1\\sin(2t) + C_1\\cos(2t)\\,$ with period $\\pi$.</p>
+      <p class="math-line">For non-Gaussian targets, higher harmonics $B_2\\sin(4t) + C_2\\cos(4t) + \\cdots$ appear.</p>
+      <p class="math-line">We exploit this structure: fit the dominant frequencies from a few gradient evaluations, then build a piecewise-linear envelope from the fit — at no extra gradient cost.</p>`;
+  }
+
+  if (info.phase === 'fit3') {
+    return `<p class="narration"><span class="highlight">Phase 1 — Fit the first harmonic from 3 evaluations</span></p>
+      <p class="math-line">Evaluate the rate at $t = 0,\\; \\pi/4,\\; \\pi/2$:</p>
+      <p class="math-line">$$r_0 = \\lambda(0) = ${fmt(data.r0)}, \\quad r_1 = \\lambda(\\pi/4) = ${fmt(data.r1)}, \\quad r_2 = \\lambda(\\pi/2) = ${fmt(data.r2)}$$</p>
+      <p class="math-line">Solve for the sinusoidal coefficients:</p>
+      <p class="math-line">$$A = \\tfrac{r_0 + r_2}{2} = ${fmt(data.A)}, \\quad C_1 = \\tfrac{r_0 - r_2}{2} = ${fmt(data.C1)}, \\quad B_1 = r_1 - A = ${fmt(data.B1)}$$</p>
+      <p class="math-line">Fitted: $\\;\\hat{r}(t) = ${fmt(data.A)} + ${fmt(data.B1)}\\sin(2t) + ${fmt(data.C1)}\\cos(2t)$. ${has2nd ? 'For a Gaussian target this would be exact.' : 'This is exact for this Gaussian target.'}</p>`;
+  }
+
+  if (info.phase === 'fit5') {
+    return `<p class="narration"><span class="highlight">Phase 1b — Fit the second harmonic from 2 more evaluations</span></p>
+      <p class="math-line">For non-Gaussian targets, the first harmonic misses higher-frequency structure. Evaluate at $t = \\pi/8$ and $t = 3\\pi/16$:</p>
+      <p class="math-line">$$r_3 = \\lambda(\\pi/8) = ${fmt(data.r_t4)}, \\quad r_4 = \\lambda(3\\pi/16) = ${fmt(data.r_t5)}$$</p>
+      <p class="math-line">Compute residuals $\\delta_i = r_i - \\hat{r}(t_i)$ and solve for $B_2, C_2$:</p>
+      <p class="math-line">$$B_2 = ${fmt(data.B2)}, \\quad C_2 = ${fmt(data.C2)}$$</p>
+      <p class="math-line">Updated fit: $\\;\\hat{r}(t) = ${fmt(data.A)} + ${fmt(data.B1)}\\sin(2t) + ${fmt(data.C1)}\\cos(2t) + ${fmt(data.B2)}\\sin(4t) + ${fmt(data.C2)}\\cos(4t)$</p>
+      <p class="math-line">Cost: <strong>5 gradient evaluations total</strong>, capturing two harmonics. The fit can now be sampled at arbitrarily many points for free.</p>`;
+  }
+
+  if (info.phase === 'sinusoid') {
+    return `<p class="narration"><span class="highlight">Phase 2a — The fitted sinusoid</span></p>
+      <p class="math-line">The dashed purple curve shows $\\hat{r}(t)$ overlaid on the true rate $\\lambda(t)$.</p>
+      ${has2nd
+        ? '<p class="math-line">With both harmonics, the fit closely tracks the true rate, including its higher-frequency oscillations.</p>'
+        : '<p class="math-line">For this Gaussian target, the fit is exact — the dashed curve lies directly on the true rate.</p>'}
+      <p class="math-line">Next, we sample this fitted curve at many points to build a piecewise-linear envelope. Since the fit is an analytical function, this costs <strong>zero gradient evaluations</strong>.</p>`;
+  }
+
+  if (info.phase === 'envelope') {
+    return `<p class="narration"><span class="highlight">Phase 2b — Build the piecewise-linear envelope</span></p>
+      <p class="math-line">Evaluate $\\alpha \\cdot \\hat{r}(t)$ at ${data.knots.length} knot points over $[0, \\pi]$ with $\\alpha = ${ALPHA}$.</p>
+      <p class="math-line">Where the chord between two knots dips below the fitted curve (concavity), an extra midpoint knot is inserted automatically.</p>
+      <p class="math-line">The result is a tight piecewise-linear envelope that follows the oscillatory structure of the rate.</p>
+      <p class="math-line">For horizons beyond $\\pi$, this envelope tiles periodically — the sinusoid repeats, so the envelope repeats.</p>
+      <p class="math-line">Total cost so far: <strong>${data.fitEvals} gradient evaluations</strong>, regardless of horizon length or number of envelope segments.</p>`;
+  }
+
+  if (info.phase === 'propose') {
+    const p = data.proposals[info.propIdx];
+    const n = info.propIdx + 1;
+    return `<p class="narration"><span class="highlight">Iteration ${n} — Propose a candidate time</span></p>
+      <p class="math-line">Draw $U_1 = ${fmt(p.U1)}$ and compute $\\xi = -\\ln(1 - U_1) = ${fmt3(p.xi)}$</p>
+      <p class="math-line">Invert the piecewise-linear compensator via the quadratic formula:</p>
+      <p class="math-line">$$s = \\frac{-b + \\sqrt{b^2 + 2a\\xi}}{a} = \\frac{-${fmt(p.curB)} + \\sqrt{${fmt3(p.disc)}}}{${fmt(p.curA)}} = ${fmt3(p.s)}$$</p>
+      <p class="math-line">Proposal time: $t_{${n}} = t_{\\text{prev}} + s = ${fmt3(p.tPrev)} + ${fmt3(p.s)} = \\mathbf{${fmt3(p.tProp)}}$</p>`;
+  }
+
+  if (info.phase === 'evaluate') {
+    const p = data.proposals[info.propIdx];
+    const n = info.propIdx + 1;
+    return `<p class="narration"><span class="highlight">Iteration ${n} — Evaluate rate and bound at proposal</span></p>
+      <p class="math-line">$$\\lambda(t_{${n}}) = ${fmt3(p.lamTrue)}, \\qquad h(t_{${n}}) = ${fmt3(p.hProp)}$$</p>
+      <p class="math-line">Acceptance ratio: $\\;\\rho = \\lambda / h = ${fmt3(p.lamTrue)} \\,/\\, ${fmt3(p.hProp)} = ${fmt3(p.ratio)}$</p>
+      ${p.ratio <= 1
+        ? `<p class="math-line">The envelope is a valid upper bound here ($\\rho \\leq 1$). The tighter the envelope, the less wasted probability.</p>`
+        : `<p class="math-line" style="color:var(--accent-red);">Bound violation: $\\rho > 1$. The envelope underestimates the true rate here — the sinusoidal fit missed this feature. The ratio$\\,>\\,R$ subdivision would handle this.</p>`}`;
+  }
+
+  if (info.phase === 'decision') {
+    const p = data.proposals[info.propIdx];
+    const n = info.propIdx + 1;
+    if (p.accepted) {
+      return `<p class="narration"><span class="highlight">Iteration ${n} — Thinning test: <span class="accept-text">Accepted!</span></span></p>
+        <p class="math-line">Draw $U_2 = ${fmt(p.U2)}$ and compare: $\\;U_2 = ${fmt(p.U2)} < ${fmt3(p.ratio)} = \\rho \\;\\Longrightarrow\\; \\textbf{Accept}$</p>
+        <p class="math-line">Return $\\;\\boxed{\\,\\tau = ${fmt3(p.tProp)}\\,}\\;$ as the next event time.</p>
+        <p class="narration" style="margin-top:0.6rem;">The sinusoidal envelope provided a tight bound from the start — the acceptance ratio of $${fmt3(p.ratio)}$ means only $${fmt3(1-p.ratio)}$ probability mass was wasted.</p>`;
+    } else {
+      return `<p class="narration"><span class="highlight">Iteration ${n} — Thinning test: <span class="reject-text">Rejected</span></span></p>
+        <p class="math-line">Draw $U_2 = ${fmt(p.U2)}$ and compare: $\\;U_2 = ${fmt(p.U2)} > ${fmt3(p.ratio)} = \\rho \\;\\Longrightarrow\\; \\textbf{Reject}$</p>
+        <p class="math-line">Insert a new knot at $t_{${n}} = ${fmt3(p.tProp)}$ with $\\,b_{\\text{new}} = \\alpha\\lambda(t_{${n}}) = ${fmt3(ALPHA*p.lamTrue)}$.</p>
+        <p class="math-line">The standard PLI refinement takes over: update the linear segment and continue.</p>`;
+    }
+  }
+  return '';
+}
+
+// ===========================
+// UI
+// ===========================
+function rebuildProgressDots() {
+  const data = computeScenario(scenarios[activeTab]);
+  const n = getTotalSteps(data);
+  const row = document.getElementById('progressRow');
+  row.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    let dot = document.createElement('div');
+    dot.className = 'pdot';
+    row.appendChild(dot);
+  }
+}
+
+function render() {
+  const data = computeScenario(scenarios[activeTab]);
+  const totalSteps = getTotalSteps(data);
+  const info = getStepInfo(currentStep, data);
+
+  document.getElementById('svgContainer').innerHTML = buildSVG(currentStep, data);
+
+  const ep = document.getElementById('explanationPanel');
+  ep.innerHTML = buildExplanation(currentStep, data);
+  renderMathInElement(ep, {
+    delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
+    throwOnError: false
+  });
+
+  const [bText, bClass] = info.badge;
+  const badge = document.getElementById('badge');
+  badge.textContent = bText;
+  badge.className = 'step-badge ' + bClass;
+
+  const phases = {
+    'true': 'True rate', 'fit3': 'Fit 1st harmonic', 'fit5': 'Fit 2nd harmonic',
+    'sinusoid': 'Fitted sinusoid', 'envelope': 'Build envelope',
+    'propose': `Iter ${(info.propIdx||0)+1} — Propose`, 'evaluate': `Iter ${(info.propIdx||0)+1} — Evaluate`,
+    'decision': `Iter ${(info.propIdx||0)+1} — ${data.proposals[info.propIdx]?.accepted ? 'Accept ✓' : 'Reject & refine'}`
+  };
+  document.getElementById('stepLabel').textContent = phases[info.phase] || '';
+
+  document.getElementById('prevBtn').disabled = currentStep === 0;
+  const nb = document.getElementById('nextBtn');
+  nb.disabled = currentStep === totalSteps - 1;
+  nb.textContent = currentStep === totalSteps - 1 ? 'Done' : 'Next →';
+
+  const dots = document.getElementById('progressRow').children;
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].className = 'pdot' + (i === currentStep ? ' active' : (i < currentStep ? ' done' : ''));
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderMathInElement(document.querySelector('.legend'), {
+    delimiters: [{left: '$', right: '$', display: false}],
+    throwOnError: false
+  });
+  rebuildProgressDots();
+  render();
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  const total = getTotalSteps(computeScenario(scenarios[activeTab]));
+  if (currentStep < total - 1) { currentStep++; render(); }
+});
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (currentStep > 0) { currentStep--; render(); }
+});
+document.addEventListener('keydown', e => {
+  const total = getTotalSteps(computeScenario(scenarios[activeTab]));
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); if (currentStep < total-1) { currentStep++; render(); } }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); if (currentStep > 0) { currentStep--; render(); } }
+});
+</script>
+</body>
+</html>
