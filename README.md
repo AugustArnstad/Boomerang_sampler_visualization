@@ -12,3 +12,7 @@ https://augustarnstad.github.io/Boomerang_sampler_visualization/sticky_boomerang
 Piecewise linear interpolation:
 
 https://augustarnstad.github.io/Boomerang_sampler_visualization/piecewise_thinning.html
+
+sinusoidal Piecewise linear interpolation:
+
+https://augustarnstad.github.io/Boomerang_sampler_visualization/sinusoidal_thinning.html
