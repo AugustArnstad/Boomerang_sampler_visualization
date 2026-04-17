@@ -13,6 +13,6 @@ Piecewise linear interpolation:
 
 https://augustarnstad.github.io/Boomerang_sampler_visualization/piecewise_thinning.html
 
-sinusoidal Piecewise linear interpolation:
+Sinusoidal Piecewise linear interpolation:
 
 https://augustarnstad.github.io/Boomerang_sampler_visualization/sinusoidal_thinning.html
